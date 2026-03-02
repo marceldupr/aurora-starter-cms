@@ -1,0 +1,122 @@
+{
+  "tables": [
+    {
+      "slug": "categories",
+      "name": "Categories",
+      "icon": "Folder",
+      "fields": [
+        { "slug": "name", "name": "Name", "field_type": "text", "required": true },
+        { "slug": "slug", "name": "Slug", "field_type": "text", "required": false }
+      ]
+    },
+    {
+      "slug": "pages",
+      "name": "Pages",
+      "icon": "FileText",
+      "fields": [
+        { "slug": "title", "name": "Title", "field_type": "text", "required": true },
+        { "slug": "slug", "name": "Slug", "field_type": "text", "required": false },
+        { "slug": "content", "name": "Content", "field_type": "text", "required": false },
+        {
+          "slug": "status",
+          "name": "Status",
+          "field_type": "select",
+          "required": false,
+          "validation": { "options": ["draft", "published"] }
+        },
+        {
+          "slug": "category_id",
+          "name": "Category",
+          "field_type": "relation",
+          "required": false,
+          "relation_table_slug": "categories"
+        }
+      ]
+    },
+    {
+      "slug": "posts",
+      "name": "Posts",
+      "icon": "Newspaper",
+      "fields": [
+        { "slug": "title", "name": "Title", "field_type": "text", "required": true },
+        { "slug": "slug", "name": "Slug", "field_type": "text", "required": false },
+        { "slug": "excerpt", "name": "Excerpt", "field_type": "text", "required": false },
+        { "slug": "content", "name": "Content", "field_type": "text", "required": false },
+        {
+          "slug": "status",
+          "name": "Status",
+          "field_type": "select",
+          "required": false,
+          "validation": { "options": ["draft", "published"] }
+        },
+        { "slug": "published_at", "name": "Published At", "field_type": "datetime", "required": false },
+        {
+          "slug": "category_id",
+          "name": "Category",
+          "field_type": "relation",
+          "required": false,
+          "relation_table_slug": "categories"
+        }
+      ]
+    },
+    {
+      "slug": "media",
+      "name": "Media",
+      "icon": "Image",
+      "fields": [
+        { "slug": "name", "name": "Name", "field_type": "text", "required": true },
+        { "slug": "url", "name": "URL", "field_type": "text", "required": false },
+        { "slug": "type", "name": "Type", "field_type": "text", "required": false },
+        { "slug": "size", "name": "Size", "field_type": "number", "required": false }
+      ]
+    }
+  ],
+  "reports": [
+    {
+      "name": "Published content count",
+      "description": "Count of published pages and posts",
+      "config": {
+        "type": "sql",
+        "sql": "SELECT 'pages' AS content_type, COUNT(*) AS count FROM pages WHERE tenant_id = $tenant_id$ AND status = 'published' UNION ALL SELECT 'posts', COUNT(*) FROM posts WHERE tenant_id = $tenant_id$ AND status = 'published'"
+      }
+    },
+    {
+      "name": "Draft queue",
+      "description": "All draft pages and posts",
+      "config": {
+        "type": "sql",
+        "sql": "SELECT 'page' AS content_type, id::text AS record_id, title FROM pages WHERE tenant_id = $tenant_id$ AND status = 'draft' UNION ALL SELECT 'post', id::text, title FROM posts WHERE tenant_id = $tenant_id$ AND status = 'draft' ORDER BY content_type, title LIMIT 100"
+      }
+    }
+  ],
+  "workflows": [
+    {
+      "name": "post.published → notify",
+      "definition": {
+        "nodes": [
+          {
+            "id": "trigger-1",
+            "type": "trigger",
+            "data": {
+              "trigger_type": "event",
+              "trigger_event_type": "post.published"
+            },
+            "position": { "x": 0, "y": 0 }
+          },
+          {
+            "id": "email-1",
+            "type": "email",
+            "data": {
+              "to_mode": "users",
+              "users_role_filter": "owner,admin",
+              "subject": "New post published: {{record.title}}",
+              "body": "Post \"{{record.title}}\" has been published. Excerpt: {{record.excerpt}}"
+            },
+            "position": { "x": 240, "y": 0 }
+          }
+        ],
+        "edges": [{ "id": "e1", "source": "trigger-1", "target": "email-1" }]
+      }
+    }
+  ]
+}
