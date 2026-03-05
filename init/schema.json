@@ -41,6 +41,7 @@
         { "slug": "title", "name": "Title", "field_type": "text", "required": true },
         { "slug": "slug", "name": "Slug", "field_type": "text", "required": false },
         { "slug": "excerpt", "name": "Excerpt", "field_type": "text", "required": false },
+        { "slug": "image_url", "name": "Featured Image URL", "field_type": "text", "required": false },
         { "slug": "content", "name": "Content", "field_type": "text", "required": false },
         {
           "slug": "status",
